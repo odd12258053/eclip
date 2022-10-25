@@ -1,0 +1,19 @@
+[package]
+name = "eclip"
+version = "0.1.0"
+edition = "2021"
+authors = ["odd <odd12258053@gmail.com>"]
+description = "Eclip is a library for building CLI applications."
+license = "MIT"
+readme = "README.md"
+repository = "https://github.com/odd12258053/eclip"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+eclip_derive = { version="0.1.0", path = "./eclip_derive" }
+
+[workspace]
+members = [
+    "eclip_derive",
+]
