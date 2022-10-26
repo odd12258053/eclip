@@ -22,7 +22,7 @@ impl Command for Command1 {
 }
 
 fn main() {
-    Application::new()
+    Application::new("ex_named")
         .add_command("", Command1::entry_point)
         .run();
 }

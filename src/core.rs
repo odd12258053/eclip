@@ -48,15 +48,13 @@ pub struct Helper<'a> {
 }
 
 impl<'a> Helper<'a> {
-    pub fn new(args: env::Args, help: bool) -> Self {
+    pub fn new(args: env::Args, name: &'a str, version: &'a str, help: bool) -> Self {
         Self {
             args,
             help,
-            name: option_env!("CARGO_BIN_NAME")
-                .or(option_env!("CARGO_PKG_NAME"))
-                .unwrap_or_default(),
+            name,
             cmds: Vec::new(),
-            version: option_env!("CARGO_PKG_VERSION").unwrap_or_default(),
+            version,
         }
     }
 
@@ -71,13 +69,22 @@ impl<'a> Helper<'a> {
 
 pub struct Application<'a> {
     cmds: BTreeMap<&'a str, Runner<'a>>,
+    name: &'a str,
+    version: &'a str,
 }
 
 impl<'a> Application<'a> {
-    pub fn new() -> Self {
+    pub fn new(name: &'a str) -> Self {
         Self {
             cmds: BTreeMap::new(),
+            name,
+            version: "",
         }
+    }
+
+    pub fn set_version(mut self, version: &'a str) -> Self {
+        self.version = version;
+        self
     }
 
     pub fn add_command(mut self, name: &'a str, cmd: fn(Helper)) -> Self {
@@ -102,7 +109,7 @@ impl<'a> Application<'a> {
     }
 
     pub fn run(&self) {
-        let mut helper = Helper::new(env::args(), false);
+        let mut helper = Helper::new(env::args(), self.name, self.version, false);
 
         if env::args().any(|arg| &arg == "--version") {
             println!("{}", helper.version);
@@ -132,12 +139,6 @@ impl<'a> Application<'a> {
                 _ => self.help(helper),
             }
         }
-    }
-}
-
-impl<'a> Default for Application<'a> {
-    fn default() -> Self {
-        Self::new()
     }
 }
 

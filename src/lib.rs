@@ -46,7 +46,7 @@
 //!     }
 //! }
 //!
-//! Application::new()
+//! Application::new("ex")
 //!     .add_command("cmd1", Command1::entry_point)
 //!     .add_command("cmd2", Command2::entry_point)
 //!     .add_subcommand(
