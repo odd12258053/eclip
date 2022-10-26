@@ -12,7 +12,15 @@ impl ArgumentMeta {
         Self { help: None }
     }
 
-    pub fn help_message(&self, name: &String, padding: usize) -> String {
+    pub fn from(attr: &syn::Attribute) -> Self {
+        if attr.tokens.is_empty() {
+            Self::new()
+        } else {
+            attr.parse_args().unwrap()
+        }
+    }
+
+    pub fn help_message(&self, name: &str, padding: usize) -> String {
         if let Some(help) = &self.help {
             if name.len() >= padding {
                 format!("  {}\n  {:padding$} {}", name, "", help.value())

@@ -17,14 +17,10 @@ pub fn derive_command(input: &DeriveInput) -> proc_macro2::TokenStream {
 
     quote! {
         impl eclip::Help for #target {
-            fn help(helper: eclip::Helper) {
-                #help_token
-            }
+            fn help(helper: eclip::Helper) { #help_token }
         }
         impl eclip::ArgsNew for #target {
-            fn new(mut args: std::env::Args) -> Self {
-                #new_token
-            }
+            fn new(mut args: std::env::Args) -> Self { #new_token }
         }
     }
 }

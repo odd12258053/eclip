@@ -20,23 +20,25 @@ impl OptionMeta {
         }
     }
 
-    pub fn short_key(&self) -> Option<String> {
-        if let Some(short) = &self.short {
-            Some(format!("-{}", short.value()))
+    pub fn from(attr: &syn::Attribute) -> Self {
+        if attr.tokens.is_empty() {
+            Self::new()
         } else {
-            None
+            attr.parse_args().unwrap()
         }
+    }
+
+    pub fn short_key(&self) -> Option<String> {
+        self.short
+            .as_ref()
+            .map(|short| format!("-{}", short.value()))
     }
 
     pub fn long_key(&self) -> Option<String> {
-        if let Some(long) = &self.long {
-            Some(format!("--{}", long.value()))
-        } else {
-            None
-        }
+        self.long.as_ref().map(|long| format!("--{}", long.value()))
     }
 
-    pub fn help_message(&self, name: &String, padding: usize) -> String {
+    pub fn help_message(&self, name: &str, padding: usize) -> String {
         let mut keys = Vec::new();
         if let Some(short_key) = self.short_key() {
             keys.push(short_key);

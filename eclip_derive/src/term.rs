@@ -21,7 +21,7 @@ impl syn::parse::Parse for Term {
         } else if ident == "help" {
             Ok(Term::Help(input.parse()?))
         } else {
-            Err(input.error("un support type"))
+            Err(input.error("Unsupported type"))
         }
     }
 }
