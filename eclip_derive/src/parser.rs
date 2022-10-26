@@ -153,8 +153,13 @@ impl HelpFactory {
         self.arg_helps.push(meta.help_message(name, PADDING_SIZE));
     }
 
-    fn add_opt_help(&mut self, name: &str, meta: &OptionMeta) {
-        self.opt_helps.push(meta.help_message(name, PADDING_SIZE));
+    fn add_opt_help(&mut self, name: &str, meta: &OptionMeta, ty: &syn::Type) {
+        let with_value = !matches!(
+            ty,
+            syn::Type::Path(path) if path.path.segments.first().unwrap().ident == "bool"
+        );
+        self.opt_helps
+            .push(meta.help_message(name, PADDING_SIZE, with_value));
     }
 
     fn add_argument(&mut self, name: String) {
@@ -220,7 +225,7 @@ pub fn parse_named_fields(fields: &syn::FieldsNamed) -> (TokenStream, TokenStrea
             if attr_ident == "option" {
                 let meta = OptionMeta::from(attr);
                 new_factory.add_option(&idx, &name, &field.ty, &meta);
-                help_factory.add_opt_help(&name, &meta);
+                help_factory.add_opt_help(&name, &meta, &field.ty);
                 break;
             } else if attr_ident == "argument" {
                 let meta = ArgumentMeta::from(attr);
@@ -258,7 +263,7 @@ pub fn parse_unnamed_fields(fields: &syn::FieldsUnnamed) -> (TokenStream, TokenS
             if attr_ident == "option" {
                 let meta = OptionMeta::from(attr);
                 new_factory.add_option(&idx, &name, &field.ty, &meta);
-                help_factory.add_opt_help(&name, &meta);
+                help_factory.add_opt_help(&name, &meta, &field.ty);
                 break;
             } else if attr_ident == "argument" {
                 let meta = ArgumentMeta::from(attr);

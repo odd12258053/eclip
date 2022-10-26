@@ -38,7 +38,7 @@ impl OptionMeta {
         self.long.as_ref().map(|long| format!("--{}", long.value()))
     }
 
-    pub fn help_message(&self, name: &str, padding: usize) -> String {
+    pub fn help_message(&self, name: &str, padding: usize, with_value: bool) -> String {
         let mut keys = Vec::new();
         if let Some(short_key) = self.short_key() {
             keys.push(short_key);
@@ -48,6 +48,9 @@ impl OptionMeta {
         }
         if keys.is_empty() {
             keys.push(format!("--{}", name));
+        }
+        if with_value {
+            keys.push(format!("<{}>", name.to_uppercase()));
         }
         let message = keys.join(" ");
         if let Some(help) = &self.help {

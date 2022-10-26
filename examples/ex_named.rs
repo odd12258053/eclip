@@ -1,6 +1,7 @@
 use eclip::{Application, Command};
 
 #[derive(Command, Debug)]
+#[allow(dead_code)]
 struct Command1 {
     #[option(short = "q", long = "quite", default = false, help = "help message")]
     quite: bool,
