@@ -2,18 +2,20 @@ use quote::quote;
 
 use crate::argument::ArgumentMeta;
 use crate::option::OptionMeta;
-use crate::utils::help_message;
 use crate::PADDING_SIZE;
 
 pub fn parse_named_fields(
     fields: &syn::FieldsNamed,
 ) -> (proc_macro2::TokenStream, proc_macro2::TokenStream) {
     if fields.named.is_empty() {
-        let help_msg = help_message(PADDING_SIZE);
         return (
             quote!(Self {}),
             quote! (
-                println!("Usage:\n  {} [OPTIONS]\n\nOptions:\n{}", helper.command(), #help_msg);
+                println!(
+                    "Usage:\n  {} [OPTIONS]\n\nOptions:\n{}",
+                    helper.command(),
+                    eclip::help_message(eclip::PADDING_SIZE)
+                );
             ),
         );
     }
@@ -49,13 +51,11 @@ pub fn parse_named_fields(
                 setter.push(quote!(#ident: arguments.#idx));
 
                 let mut conditions = Vec::new();
-                if let Some(short) = &meta.short {
-                    let key = format!("-{}", short.value());
-                    conditions.push(quote!(val == #key));
+                if let Some(short_key) = meta.short_key() {
+                    conditions.push(quote!(val == #short_key));
                 }
-                if let Some(long) = &meta.long {
-                    let key = format!("--{}", long.value());
-                    conditions.push(quote!(val == #key));
+                if let Some(long_key) = meta.long_key() {
+                    conditions.push(quote!(val == #long_key));
                 }
                 if conditions.is_empty() {
                     let key = format!("--{}", name);
@@ -66,9 +66,7 @@ pub fn parse_named_fields(
                         if path.path.segments.first().unwrap().ident == "bool" =>
                     {
                         opts.push(quote!(
-                            if #(#conditions)||* {
-                                arguments.#idx = true;
-                            }
+                            if #(#conditions)||* { arguments.#idx = true; }
                         ))
                     }
                     _ => opts.push(quote!(
@@ -112,33 +110,50 @@ pub fn parse_named_fields(
     } else {
         format!("\n\nArguments:\n{}", argument_helps.join("\n"))
     };
+    let opts_help = format!("\n\nOptions:\n{}", option_helps.join("\n"))
+        .trim_end()
+        .to_string()
+        + "\n";
 
-    option_helps.push(help_message(PADDING_SIZE));
-    let opts_help = format!("\n\nOptions:\n{}", option_helps.join("\n"));
+    let cond = if !opts.is_empty() && !arg.is_empty() {
+        quote!(#(#opts) else * else { #(#arg) else * })
+    } else if opts.is_empty() {
+        quote!(#(#arg) else * )
+    } else {
+        quote!(#(#opts) else *)
+    };
 
     (
         quote! (
-            let mut arguments = ( #(#inits),* );
+            let mut arguments = ( #(#inits),*, );
             let mut cnt = 0;
-            while let Some(val) = args.next() {
-                #(#opts) else * else { #(#arg) else * }
-            }
+            while let Some(val) = args.next() { #cond }
             Self { #(#setter),* }
         ),
         quote! (
-            println!("Usage:\n  {} [OPTIONS]{}{}{}", helper.command(), #args, #args_help, #opts_help);
+            println!(
+                "Usage:\n  {} [OPTIONS]{}{}{}{}",
+                helper.command(),
+                #args,
+                #args_help,
+                #opts_help,
+                eclip::help_message(eclip::PADDING_SIZE)
+            );
         ),
     )
 }
 
 pub fn parse_unit() -> (proc_macro2::TokenStream, proc_macro2::TokenStream) {
-    let opts_help = format!("\n\nOptions:\n{}", help_message(PADDING_SIZE));
     (
         quote! {
             Self
         },
         quote! {
-            println!("Usage:\n  {} [OPTIONS]{}", helper.command(), #opts_help);
+            println!(
+                "Usage:\n  {} [OPTIONS]\n\nOptions:\n{}",
+                helper.command(),
+                eclip::help_message(eclip::PADDING_SIZE)
+            );
         },
     )
 }
@@ -147,11 +162,14 @@ pub fn parse_unnamed_fields(
     fields: &syn::FieldsUnnamed,
 ) -> (proc_macro2::TokenStream, proc_macro2::TokenStream) {
     if fields.unnamed.is_empty() {
-        let help_msg = help_message(PADDING_SIZE);
         return (
             quote!(Self()),
             quote! (
-                println!("Usage:\n  {} [OPTIONS]\n\nOptions:\n{}", helper.command(), #help_msg);
+                println!(
+                    "Usage:\n  {} [OPTIONS]\n\nOptions:\n{}",
+                    helper.command(),
+                    eclip::help_message(eclip::PADDING_SIZE)
+                );
             ),
         );
     }
@@ -185,13 +203,11 @@ pub fn parse_unnamed_fields(
                 setter.push(quote!(arguments.#idx));
 
                 let mut conditions = Vec::new();
-                if let Some(short) = &meta.short {
-                    let key = format!("-{}", short.value());
-                    conditions.push(quote!(val == #key));
+                if let Some(short_key) = meta.short_key() {
+                    conditions.push(quote!(val == #short_key));
                 }
-                if let Some(long) = &meta.long {
-                    let key = format!("--{}", long.value());
-                    conditions.push(quote!(val == #key));
+                if let Some(long_key) = meta.long_key() {
+                    conditions.push(quote!(val == #long_key));
                 }
                 if conditions.is_empty() {
                     let key = format!("--{}", name);
@@ -202,9 +218,7 @@ pub fn parse_unnamed_fields(
                         if path.path.segments.first().unwrap().ident == "bool" =>
                     {
                         opts.push(quote!(
-                            if #(#conditions)||* {
-                                arguments.#idx = true;
-                            }
+                            if #(#conditions)||* { arguments.#idx = true; }
                         ))
                     }
                     _ => opts.push(quote!(
@@ -249,12 +263,13 @@ pub fn parse_unnamed_fields(
         format!("\n\nArguments:\n{}", argument_helps.join("\n"))
     };
 
-    option_helps.push(help_message(PADDING_SIZE));
-    let opts_help = format!("\n\nOptions:\n{}", option_helps.join("\n"));
-
+    let opts_help = format!("\n\nOptions:\n{}", option_helps.join("\n"))
+        .trim_end()
+        .to_string()
+        + "\n";
     (
         quote! (
-            let mut arguments = ( #(#inits),* );
+            let mut arguments = ( #(#inits),*, );
             let mut cnt = 0;
             while let Some(val) = args.next() {
                 #(#opts) else * else { #(#arg) else * }
@@ -262,7 +277,14 @@ pub fn parse_unnamed_fields(
             Self ( #(#setter),* )
         ),
         quote! (
-            println!("Usage:\n  {} [OPTIONS]{}{}{}", helper.command(), #args, #args_help, #opts_help);
+            println!(
+                "Usage:\n  {} [OPTIONS]{}{}{}\n{}",
+                helper.command(),
+                #args,
+                #args_help,
+                #opts_help,
+                eclip::help_message(eclip::PADDING_SIZE)
+            );
         ),
     )
 }

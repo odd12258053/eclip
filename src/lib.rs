@@ -64,7 +64,7 @@ use std::process::exit;
 
 pub use eclip_derive::Command;
 
-const PADDING_SIZE: usize = 30;
+pub const PADDING_SIZE: usize = 30;
 
 enum Runner<'a> {
     FType(fn(Helper)),
@@ -79,7 +79,7 @@ pub struct Helper<'a> {
     pub version: &'a str,
 }
 
-fn help_message(padding: usize) -> String {
+pub fn help_message(padding: usize) -> String {
     format!(
         "  {:<padding$} {}\n  {:<padding$} {}",
         "--help", "Show this message.", "--version", "Show this version.",

@@ -8,7 +8,6 @@ mod derive;
 mod option;
 mod parser;
 mod term;
-mod utils;
 
 use crate::derive::derive_command;
 
