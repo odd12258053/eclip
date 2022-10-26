@@ -158,13 +158,13 @@ impl HelpFactory {
     }
 
     fn add_argument(&mut self, name: String) {
-        self.arguments.push(name);
+        self.arguments.push(format!("<{}>", name));
     }
 
     fn build_default() -> TokenStream {
         quote! (
             println!(
-                "Usage:\n  {} [OPTIONS]\n\nOptions:\n{}",
+                "USAGE:\n  {} [OPTIONS]\n\nOptions:\n{}",
                 helper.command(),
                 eclip::help_message(eclip::PADDING_SIZE)
             );
@@ -180,15 +180,15 @@ impl HelpFactory {
         let args_help = if self.arg_helps.is_empty() {
             "".to_string()
         } else {
-            format!("\n\nArguments:\n{}", self.arg_helps.join("\n"))
+            format!("\n\nARGS:\n{}", self.arg_helps.join("\n"))
         };
-        let opts_help = format!("\n\nOptions:\n{}", self.opt_helps.join("\n"))
+        let opts_help = format!("\n\nOPTIONS:\n{}", self.opt_helps.join("\n"))
             .trim_end()
             .to_string()
             + "\n";
         quote! (
             println!(
-                "Usage:\n  {} [OPTIONS]{}{}{}{}",
+                "USAGE:\n  {} [OPTIONS]{}{}{}{}",
                 helper.command(),
                 #args,
                 #args_help,

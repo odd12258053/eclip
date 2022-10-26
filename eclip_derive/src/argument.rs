@@ -21,6 +21,7 @@ impl ArgumentMeta {
     }
 
     pub fn help_message(&self, name: &str, padding: usize) -> String {
+        let name = format!("<{}>", name);
         if let Some(help) = &self.help {
             if name.len() >= padding {
                 format!("  {}\n  {:padding$} {}", name, "", help.value())

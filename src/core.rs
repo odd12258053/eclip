@@ -92,7 +92,7 @@ impl<'a> Application<'a> {
 
     fn help(&self, helper: Helper) {
         println!(
-            "Usage:\n  {} COMMAND [OPTIONS] [ARGS]...\nOptions:\n{}\nCommands:",
+            "USAGE:\n  {} COMMAND [OPTIONS] [ARGS]...\nOPTIONS:\n{}\nCOMMANDS:",
             helper.name,
             help_message(PADDING_SIZE),
         );
@@ -154,7 +154,7 @@ impl<'a> SubCommand<'a> {
 
     fn help(&self, helper: Helper) {
         println!(
-            "Usage:\n  {} COMMAND [OPTIONS] [ARGS]...\nOptions:\n{}\nCommands:",
+            "USAGE:\n  {} COMMAND [OPTIONS] [ARGS]...\nOPTIONS:\n{}\nCOMMANDS:",
             helper.name,
             help_message(PADDING_SIZE),
         );
