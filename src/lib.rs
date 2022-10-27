@@ -64,6 +64,8 @@ pub const PADDING_SIZE: usize = 30;
 
 mod core;
 mod utils;
+mod validator;
 
 pub use crate::core::{Application, ArgsNew, Command, Help, Helper, SubCommand};
 pub use crate::utils::help_message;
+pub use crate::validator::{Validator, ArgValue};

@@ -30,11 +30,11 @@ impl NewFactory {
         self.keys.push(quote!(#ident));
     }
 
-    fn add_option(&mut self, idx: &syn::Index, name: &str, ty: &syn::Type, meta: &OptionMeta) {
+    fn add_option(&mut self, idx: &syn::Index, name: &str, _ty: &syn::Type, meta: &OptionMeta) {
         if let Some(default) = &meta.default {
             self.inits.push(quote!(#default));
         } else {
-            self.inits.push(quote!(#ty ::default()));
+            self.inits.push(quote!(Default::default()));
         }
         self.setter.push(quote!(arguments.#idx));
 
@@ -49,27 +49,24 @@ impl NewFactory {
             let key = format!("--{}", name);
             conditions.push(quote!(val == #key));
         }
-        match ty {
-            syn::Type::Path(path) if path.path.segments.first().unwrap().ident == "bool" => {
-                self.opts.push(quote!(
-                    if #(#conditions)||* { arguments.#idx = true; }
-                ))
+        self.opts.push(quote!(
+            if #(#conditions)||* {
+                arguments.#idx = eclip::Validator::validate(
+                    arguments.#idx, eclip::ArgValue::Option(val), &mut args
+                );
             }
-            _ => self.opts.push(quote!(
-                if #(#conditions)||* {
-                    arguments.#idx = args.next().unwrap().parse().unwrap();
-                }
-            )),
-        }
+        ));
     }
 
-    fn add_argument(&mut self, idx: &syn::Index, _name: &str, _meta: &ArgumentMeta) {
+    fn add_argument(&mut self, idx: &syn::Index, _name: &str, _ty: &syn::Type, _meta: &ArgumentMeta) {
         let arg_idx = &self.arg_idx;
         self.inits.push(quote!(None));
         self.setter.push(quote!(arguments.#idx.unwrap()));
         self.args.push(quote!(
             if cnt == #arg_idx {
-                arguments.#idx = Some(val.parse().unwrap());
+                arguments.#idx = eclip::Validator::validate(
+                    arguments.#idx, eclip::ArgValue::Argument(val), &mut args
+                );
                 cnt += 1;
             }
         ));
@@ -260,7 +257,7 @@ pub fn parse_named_fields(fields: &syn::FieldsNamed) -> (TokenStream, TokenStrea
                 break;
             } else if attr_ident == "argument" {
                 let meta = ArgumentMeta::from(attr);
-                new_factory.add_argument(&idx, &name, &meta);
+                new_factory.add_argument(&idx, &name, &field.ty, &meta);
                 help_factory.add_arg_help(&name, &meta);
                 help_factory.add_argument(name);
                 break;
@@ -298,7 +295,7 @@ pub fn parse_unnamed_fields(fields: &syn::FieldsUnnamed) -> (TokenStream, TokenS
                 break;
             } else if attr_ident == "argument" {
                 let meta = ArgumentMeta::from(attr);
-                new_factory.add_argument(&idx, &name, &meta);
+                new_factory.add_argument(&idx, &name, &field.ty, &meta);
                 help_factory.add_arg_help(&name, &meta);
                 help_factory.add_argument(name);
                 break;

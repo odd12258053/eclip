@@ -13,6 +13,12 @@ struct Command1 {
     b: u32,
     #[option(short = "c", default = 10)]
     c: i32,
+    #[option(short = "v")]
+    v: Vec<bool>,
+    #[option(short = "o")]
+    o: Option<i32>,
+    #[option(short = "f")]
+    f: f32
 }
 
 impl Command for Command1 {
