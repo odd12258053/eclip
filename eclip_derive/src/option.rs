@@ -5,7 +5,7 @@ use crate::term::Term;
 
 pub struct OptionMeta {
     pub short: Option<LitStr>,
-    pub long: Option<LitStr>,
+    pub long: Option<Option<LitStr>>,
     pub default: Option<Lit>,
     pub help: Option<LitStr>,
 }
@@ -34,34 +34,11 @@ impl OptionMeta {
             .map(|short| format!("-{}", short.value()))
     }
 
-    pub fn long_key(&self) -> Option<String> {
-        self.long.as_ref().map(|long| format!("--{}", long.value()))
-    }
-
-    pub fn help_message(&self, name: &str, padding: usize, with_value: bool) -> String {
-        let mut keys = Vec::new();
-        if let Some(short_key) = self.short_key() {
-            keys.push(short_key);
-        }
-        if let Some(long_key) = self.long_key() {
-            keys.push(long_key);
-        }
-        if keys.is_empty() {
-            keys.push(format!("--{}", name));
-        }
-        if with_value {
-            keys.push(format!("<{}>", name.to_uppercase()));
-        }
-        let message = keys.join(" ");
-        if let Some(help) = &self.help {
-            if message.len() >= padding {
-                format!("  {}\n  {:padding$} {}", message, "", help.value())
-            } else {
-                format!("  {:<padding$} {}", message, help.value())
-            }
-        } else {
-            format!("  {}", message)
-        }
+    pub fn long_key(&self, name: &str) -> Option<String> {
+        self.long.as_ref().map(|long| match long {
+            Some(long) => format!("--{}", long.value()),
+            None => format!("--{}", name),
+        })
     }
 }
 

@@ -3,7 +3,7 @@ use syn::{Lit, LitStr, Token};
 
 pub enum Term {
     Short(LitStr),
-    Long(LitStr),
+    Long(Option<LitStr>),
     Default(Lit),
     Help(LitStr),
 }
@@ -11,14 +11,20 @@ pub enum Term {
 impl syn::parse::Parse for Term {
     fn parse(input: syn::parse::ParseStream) -> syn::Result<Self> {
         let ident: Ident = input.parse()?;
-        let _eq_token: Token![=] = input.parse()?;
         if ident == "short" {
+            input.parse::<Token![=]>()?;
             Ok(Term::Short(input.parse()?))
         } else if ident == "long" {
-            Ok(Term::Long(input.parse()?))
+            if input.parse::<Token![=]>().is_ok() {
+                Ok(Term::Long(Some(input.parse()?)))
+            } else {
+                Ok(Term::Long(None))
+            }
         } else if ident == "default" {
+            input.parse::<Token![=]>()?;
             Ok(Term::Default(input.parse()?))
         } else if ident == "help" {
+            input.parse::<Token![=]>()?;
             Ok(Term::Help(input.parse()?))
         } else {
             Err(input.error("Unsupported type"))

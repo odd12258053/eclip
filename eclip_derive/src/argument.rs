@@ -4,7 +4,7 @@ use syn::{LitStr, Token};
 use crate::term::Term;
 
 pub struct ArgumentMeta {
-    help: Option<LitStr>,
+    pub help: Option<LitStr>,
 }
 
 impl ArgumentMeta {
@@ -17,19 +17,6 @@ impl ArgumentMeta {
             Self::new()
         } else {
             attr.parse_args().unwrap()
-        }
-    }
-
-    pub fn help_message(&self, name: &str, padding: usize) -> String {
-        let name = format!("<{}>", name);
-        if let Some(help) = &self.help {
-            if name.len() >= padding {
-                format!("  {}\n  {:padding$} {}", name, "", help.value())
-            } else {
-                format!("  {:<padding$} {}", name, help.value())
-            }
-        } else {
-            format!("  {}", name)
         }
     }
 }

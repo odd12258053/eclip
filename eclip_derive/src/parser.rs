@@ -42,7 +42,7 @@ impl NewFactory {
         if let Some(short_key) = meta.short_key() {
             conditions.push(quote!(val == #short_key));
         }
-        if let Some(long_key) = meta.long_key() {
+        if let Some(long_key) = meta.long_key(name) {
             conditions.push(quote!(val == #long_key));
         }
         if conditions.is_empty() {
@@ -150,16 +150,47 @@ impl HelpFactory {
     }
 
     fn add_arg_help(&mut self, name: &str, meta: &ArgumentMeta) {
-        self.arg_helps.push(meta.help_message(name, PADDING_SIZE));
+        let name = format!("<{}>", name);
+        self.arg_helps.push(match &meta.help {
+            Some(help) => {
+                if name.len() >= PADDING_SIZE {
+                    format!("  {}\n  {:PADDING_SIZE$} {}", name, "", help.value())
+                } else {
+                    format!("  {:<PADDING_SIZE$} {}", name, help.value())
+                }
+            }
+            None => format!("  {}", name),
+        });
     }
 
     fn add_opt_help(&mut self, name: &str, meta: &OptionMeta, ty: &syn::Type) {
-        let with_value = !matches!(
+        let mut keys = Vec::new();
+        if let Some(short_key) = meta.short_key() {
+            keys.push(short_key);
+        }
+        if let Some(long_key) = meta.long_key(name) {
+            keys.push(long_key);
+        }
+        if keys.is_empty() {
+            keys.push(format!("--{}", name));
+        }
+        if !matches!(
             ty,
             syn::Type::Path(path) if path.path.segments.first().unwrap().ident == "bool"
-        );
-        self.opt_helps
-            .push(meta.help_message(name, PADDING_SIZE, with_value));
+        ) {
+            keys.push(format!("<{}>", name.to_uppercase()));
+        }
+        let message = keys.join(" ");
+        self.opt_helps.push(match &meta.help {
+            Some(help) => {
+                if message.len() >= PADDING_SIZE {
+                    format!("  {}\n  {:PADDING_SIZE$} {}", message, "", help.value())
+                } else {
+                    format!("  {:<PADDING_SIZE$} {}", message, help.value())
+                }
+            }
+            None => format!("  {}", message),
+        });
     }
 
     fn add_argument(&mut self, name: String) {
