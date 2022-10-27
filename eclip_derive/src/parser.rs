@@ -3,7 +3,6 @@ use quote::quote;
 
 use crate::argument::ArgumentMeta;
 use crate::option::OptionMeta;
-use crate::PADDING_SIZE;
 
 struct NewFactory {
     inits: Vec<TokenStream>,
@@ -58,7 +57,13 @@ impl NewFactory {
         ));
     }
 
-    fn add_argument(&mut self, idx: &syn::Index, _name: &str, _ty: &syn::Type, _meta: &ArgumentMeta) {
+    fn add_argument(
+        &mut self,
+        idx: &syn::Index,
+        _name: &str,
+        _ty: &syn::Type,
+        _meta: &ArgumentMeta,
+    ) {
         let arg_idx = &self.arg_idx;
         self.inits.push(quote!(None));
         self.setter.push(quote!(arguments.#idx.unwrap()));
@@ -133,8 +138,8 @@ impl NewFactory {
 
 struct HelpFactory {
     arguments: Vec<String>,
-    arg_helps: Vec<String>,
-    opt_helps: Vec<String>,
+    arg_helps: Vec<TokenStream>,
+    opt_helps: Vec<TokenStream>,
 }
 
 impl HelpFactory {
@@ -150,13 +155,16 @@ impl HelpFactory {
         let name = format!("<{}>", name);
         self.arg_helps.push(match &meta.help {
             Some(help) => {
-                if name.len() >= PADDING_SIZE {
-                    format!("  {}\n  {:PADDING_SIZE$} {}", name, "", help.value())
-                } else {
-                    format!("  {:<PADDING_SIZE$} {}", name, help.value())
-                }
+                quote!({
+                    let name = #name;
+                    if name.len() >= helper.padding {
+                        format!("  {}\n  {:padding$} {}", name, "", #help, padding=helper.padding)
+                    } else {
+                        format!("  {:<padding$} {}", name, #help, padding=helper.padding)
+                    }
+                })
             }
-            None => format!("  {}", name),
+            None => quote!(format!("  {}", #name)),
         });
     }
 
@@ -180,13 +188,16 @@ impl HelpFactory {
         let message = keys.join(" ");
         self.opt_helps.push(match &meta.help {
             Some(help) => {
-                if message.len() >= PADDING_SIZE {
-                    format!("  {}\n  {:PADDING_SIZE$} {}", message, "", help.value())
-                } else {
-                    format!("  {:<PADDING_SIZE$} {}", message, help.value())
-                }
+                quote!({
+                    let message = #message;
+                    if message.len() >= helper.padding {
+                        format!("  {}\n  {:padding$} {}", message, "", #help, padding=helper.padding)
+                    } else {
+                        format!("  {:<padding$} {}", message, #help, padding=helper.padding)
+                    }
+                })
             }
-            None => format!("  {}", message),
+            None => quote!(format!("  {}", #message)),
         });
     }
 
@@ -197,9 +208,9 @@ impl HelpFactory {
     fn build_default() -> TokenStream {
         quote! (
             println!(
-                "USAGE:\n  {} [OPTIONS]\n\nOptions:\n{}",
+                "USAGE:\n  {} [OPTIONS]\n\nOPTIONS:\n{}",
                 helper.command(),
-                eclip::help_message(eclip::PADDING_SIZE)
+                eclip::help_message(helper.padding)
             );
         )
     }
@@ -211,14 +222,17 @@ impl HelpFactory {
             format!(" {}", self.arguments.join(" "))
         };
         let args_help = if self.arg_helps.is_empty() {
-            "".to_string()
+            quote!("")
         } else {
-            format!("\n\nARGS:\n{}", self.arg_helps.join("\n"))
+            let arg_helps = &self.arg_helps;
+            quote!(format!("\n\nARGS:\n{}", [#(#arg_helps),*].join("\n")))
         };
-        let opts_help = format!("\n\nOPTIONS:\n{}", self.opt_helps.join("\n"))
-            .trim_end()
-            .to_string()
-            + "\n";
+        let opts_help = if self.opt_helps.is_empty() {
+            quote!("\n\nOPTIONS:\n")
+        } else {
+            let opt_helps = &self.opt_helps;
+            quote!(format!("\n\nOPTIONS:\n{}\n", [#(#opt_helps),*].join("\n")))
+        };
         quote! (
             println!(
                 "USAGE:\n  {} [OPTIONS]{}{}{}{}",
@@ -226,7 +240,7 @@ impl HelpFactory {
                 #args,
                 #args_help,
                 #opts_help,
-                eclip::help_message(eclip::PADDING_SIZE)
+                eclip::help_message(helper.padding)
             );
         )
     }

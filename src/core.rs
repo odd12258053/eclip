@@ -3,7 +3,6 @@ use std::env;
 use std::process::exit;
 
 use crate::utils::help_message;
-use crate::PADDING_SIZE;
 
 pub trait ArgsNew {
     fn new(args: env::Args) -> Self;
@@ -45,16 +44,24 @@ pub struct Helper<'a> {
     pub name: &'a str,
     pub cmds: Vec<String>,
     pub version: &'a str,
+    pub padding: usize,
 }
 
 impl<'a> Helper<'a> {
-    pub fn new(args: env::Args, name: &'a str, version: &'a str, help: bool) -> Self {
+    pub fn new(
+        args: env::Args,
+        name: &'a str,
+        version: &'a str,
+        help: bool,
+        padding: usize,
+    ) -> Self {
         Self {
             args,
             help,
             name,
             cmds: Vec::new(),
             version,
+            padding,
         }
     }
 
@@ -71,6 +78,7 @@ pub struct Application<'a> {
     cmds: BTreeMap<&'a str, Runner<'a>>,
     name: &'a str,
     version: &'a str,
+    padding: usize,
 }
 
 impl<'a> Application<'a> {
@@ -79,7 +87,13 @@ impl<'a> Application<'a> {
             cmds: BTreeMap::new(),
             name,
             version: "",
+            padding: 30,
         }
+    }
+
+    pub fn set_padding(mut self, padding: usize) -> Self {
+        self.padding = padding;
+        self
     }
 
     pub fn set_version(mut self, version: &'a str) -> Self {
@@ -101,7 +115,7 @@ impl<'a> Application<'a> {
         println!(
             "USAGE:\n  {} COMMAND [OPTIONS] [ARGS]...\n\nOPTIONS:\n{}\n\nCOMMANDS:",
             helper.name,
-            help_message(PADDING_SIZE),
+            help_message(helper.padding),
         );
         for cmd in self.cmds.keys() {
             println!("  {}", cmd)
@@ -109,7 +123,7 @@ impl<'a> Application<'a> {
     }
 
     pub fn run(&self) {
-        let mut helper = Helper::new(env::args(), self.name, self.version, false);
+        let mut helper = Helper::new(env::args(), self.name, self.version, false, self.padding);
 
         if env::args().any(|arg| &arg == "--version") {
             println!("{}", helper.version);
@@ -157,7 +171,7 @@ impl<'a> SubCommand<'a> {
         println!(
             "USAGE:\n  {} COMMAND [OPTIONS] [ARGS]...\n\nOPTIONS:\n{}\n\nCOMMANDS:",
             helper.name,
-            help_message(PADDING_SIZE),
+            help_message(helper.padding),
         );
         for cmd in self.cmds.keys() {
             println!("  {}", cmd)

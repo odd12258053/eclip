@@ -18,7 +18,7 @@ struct Command1 {
     #[option(short = "o")]
     o: Option<i32>,
     #[option(short = "f")]
-    f: f32
+    f: f32,
 }
 
 impl Command for Command1 {
