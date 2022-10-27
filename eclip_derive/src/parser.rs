@@ -66,7 +66,15 @@ impl NewFactory {
     ) {
         let arg_idx = &self.arg_idx;
         self.inits.push(quote!(None));
-        self.setter.push(quote!(arguments.#idx.unwrap()));
+        self.setter.push(quote!({
+            match arguments.#idx {
+                Some(val) => val,
+                Nome => {
+                    eprintln!("More arguments are needed.");
+                    std::process::exit(128);
+                }
+            }
+        }));
         self.args.push(quote!(
             if cnt == #arg_idx {
                 arguments.#idx = eclip::Validator::validate(

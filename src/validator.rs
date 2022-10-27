@@ -1,4 +1,5 @@
 use std::env::Args;
+use std::process::exit;
 
 pub enum ArgValue {
     Option(String),
@@ -12,7 +13,13 @@ pub trait Validator {
 impl Validator for String {
     fn validate(_pre: Self, arg: ArgValue, args: &mut Args) -> Self {
         match arg {
-            ArgValue::Option(_) => args.next().unwrap(),
+            ArgValue::Option(arg) => match args.next() {
+                Some(val) => val,
+                None => {
+                    eprintln!("\"{}\" requires one argument", arg);
+                    exit(128);
+                }
+            },
             ArgValue::Argument(arg) => arg,
         }
     }
@@ -22,7 +29,13 @@ impl Validator for bool {
     fn validate(_pre: Self, arg: ArgValue, _args: &mut Args) -> Self {
         match arg {
             ArgValue::Option(_) => true,
-            ArgValue::Argument(arg) => arg.parse().unwrap(),
+            ArgValue::Argument(arg) => match arg.parse() {
+                Ok(val) => val,
+                Err(_) => {
+                    eprintln!("Invalid a value");
+                    exit(128);
+                }
+            },
         }
     }
 }
@@ -32,10 +45,23 @@ macro_rules! validator_for_numeric {
         $(
             impl Validator for $i {
                 fn validate(_pre: Self, arg: ArgValue, args: &mut Args) -> Self {
-                    match arg {
-                        ArgValue::Option(_) => args.next().unwrap(),
+                    let val = match arg {
+                        ArgValue::Option(arg) => match args.next() {
+                            Some(val) => val,
+                            None => {
+                                eprintln!("\"{}\" requires one argument", arg);
+                                exit(128);
+                            }
+                        },
                         ArgValue::Argument(arg) => arg
-                    }.parse().unwrap()
+                    };
+                    match val.parse() {
+                        Ok(val) => val,
+                        Err(_) => {
+                            eprintln!("Invalid a value");
+                            exit(128);
+                        }
+                    }
                 }
             }
         )*
